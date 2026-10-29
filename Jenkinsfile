@@ -1,71 +1,35 @@
 pipeline {
     agent any
 
-    tools {
-        jdk 'jdk17'
-        maven 'maven3'
-    }
-
     stages {
-        stage('Checkout code from Git') {
+        stage('Checkout') {
             steps {
                 checkout scm
             }
         }
 
-        stage('Build application') {
+        stage('Build & Test') {
             steps {
-                sh 'mvn clean compile'
-            }
-        }
-
-        stage('Run unit tests') {
-            steps {
-                sh 'mvn test'
-            }
-            post {
-                always {
-                    junit 'target/surefire-reports/*.xml'
+                dir('sample-java-app') {
+                    sh 'mvn clean test'
                 }
             }
         }
 
-        stage('SonarQube analysis') {
+        stage('Package') {
             steps {
-                withSonarQubeEnv('sonarqube') {
-                    sh 'mvn sonar:sonar'
+                dir('sample-java-app') {
+                    sh 'mvn package -DskipTests'
                 }
             }
         }
 
-        stage('Publish artifact to Nexus') {
+        stage('Deploy to Nexus') {
             steps {
-                sh 'mvn package -DskipTests'
-                nexusArtifactUploader(
-                    nexusVersion: 'nexus3',
-                    protocol: 'http',
-                    nexusUrl: 'nexus:8081',
-                    groupId: 'com.devops.lab7',
-                    version: '1.0.0',
-                    repository: 'maven-releases',
-                    credentialsId: 'nexus-credentials',
-                    artifacts: [[
-                        artifactId: 'sample-java-app',
-                        classifier: '',
-                        file: 'target/sample-java-app-1.0.0.jar',
-                        type: 'jar'
-                    ]]
-                )
+                dir('sample-java-app') {
+                    sh 'mvn deploy -DskipTests'
+                }
             }
-        }
-    }
-
-    post {
-        success {
-            archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
-        }
-        always {
-            cleanWs()
         }
     }
 }
