@@ -14,25 +14,19 @@ pipeline {
 
         stage('Build & Test') {
             steps {
-                dir('sample-java-app') {
-                    sh 'mvn clean test'
-                }
+                sh 'mvn clean test'
             }
         }
 
         stage('Package') {
             steps {
-                dir('sample-java-app') {
-                    sh 'mvn package -DskipTests'
-                }
+                sh 'mvn package -DskipTests'
             }
         }
 
         stage('Deploy to Nexus') {
             steps {
-                dir('sample-java-app') {
-                    sh 'mvn deploy -DskipTests'
-                }
+                sh 'mvn deploy -DskipTests'
             }
         }
     }
